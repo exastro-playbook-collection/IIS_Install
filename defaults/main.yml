@@ -1,0 +1,14 @@
+---
+
+# # 共通変数 # #
+VAR_IIS_OS_Version: Windows Server 2016                                         # 管理対象マシンのOSバージョン
+
+# # IISサービスインストールの関連変数 # #
+# Windows機能のインストールタイプ
+VAR_IIS_INSTALLTYPE: DEFAULT                                                    # windows featureのインストール方法（DEFAULT：デフォルトインストール；CUSTOM：カスタムインストール；NONE：IISサービス起動/停止）
+# インストールしたいWindows機能の指定（カスタムインストール時のみ有効）
+VAR_IIS_FEATURE_NAME: Web-Server,Web-Mgmt-Console
+VAR_IIS_SOURCEPATH: "C:\\Windows\\Temp"                                         # IIS ソースファイルのパス（「.NET Framework 3.5 Features」がインストールする必要の場合指定必須）
+VAR_Installer_Name: microsoft-windows-netfx3-ondemand-package.cab               # 「.NET Framework 3.5 Features」のインストーラ物件のファイル名（WinodwsServer2016のインストールCDに「sources\sxs」フォルダの下に格納されている）
+VAR_Installer_URL:                                                              # インストールパッケージのファイルのWeb格納URL（この値が設定されない場合、win_copyでファイルを転送する）
+VAR_IIS_State: START                                                            # Role実行の最後、IISサービスが起動するか停止するか指定する（START：起動（デフォルト）；STOP：停止）、VAR_IIS_INSTALLTYPE＝"NONE"のみ有効

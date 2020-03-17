@@ -1,0 +1,3 @@
+---
+command:
+  - "Get-WindowsFeature | Format-Table -Property 'name','InstallState'"

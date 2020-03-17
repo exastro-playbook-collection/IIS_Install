@@ -1,0 +1,70 @@
+---
+  - name: check OS version
+    fail: msg="This role is only for Microsoft Windows Server 2016."
+    when: VAR_IIS_OS_Version not in ansible_distribution
+
+  - name: install windows feature
+    block:
+      - name: parameter check
+        fail : msg="Parameter Error in VAR_IIS_INSTALLTYPE({{ VAR_IIS_INSTALLTYPE }})"
+        when: (VAR_IIS_INSTALLTYPE | upper != "DEFAULT") and (VAR_IIS_INSTALLTYPE | upper != "CUSTOM") and (VAR_IIS_INSTALLTYPE | upper != "NONE")
+
+      - name: get source when custom
+        block:
+          - name: check source path existed
+            win_stat:
+              path: "{{ VAR_IIS_SOURCEPATH }}"
+            register: sourcepath_stat
+
+          - name: create directory if source path not existed
+            win_file:
+              path: "{{ VAR_IIS_SOURCEPATH }}"
+              state: directory
+            when: sourcepath_stat.stat.exists == false
+
+          - name: get url
+            win_get_url:
+              url: "{{ VAR_Installer_URL }}/{{ VAR_Installer_Name }}"
+              dest: "{{ VAR_IIS_SOURCEPATH }}\\{{ VAR_Installer_Name }}"
+            when: VAR_Installer_URL is not none
+
+          - name: win copy
+            win_copy:
+              src: "{{ VAR_Installer_Name }}"
+              dest: "{{ VAR_IIS_SOURCEPATH }}\\{{ VAR_Installer_Name }}"
+            when: VAR_Installer_URL is none
+        when: (VAR_IIS_INSTALLTYPE | upper == "CUSTOM") and (VAR_IIS_SOURCEPATH is not none) and (VAR_Installer_Name is not none)
+
+      - name: default install windows feature
+        win_feature:
+          name: Web-Server,Web-Mgmt-Console
+        when: VAR_IIS_INSTALLTYPE | upper == "DEFAULT"
+
+      - name: custom install windows feature
+        win_feature:
+          name: "Web-Server,Web-Mgmt-Console,{{ VAR_IIS_FEATURE_NAME }}"
+          source: "{{ VAR_IIS_SOURCEPATH }}"
+        when: (VAR_IIS_FEATURE_NAME is not none) and (VAR_IIS_INSTALLTYPE | upper == "CUSTOM")
+
+      - name: manage source path
+        block:
+          - name: before delete to check source path existed
+            win_stat:
+              path: "{{ VAR_IIS_SOURCEPATH }}"
+            register: sourcepath_state
+
+          - name: delete source file
+            win_file:
+              path: "{{ VAR_IIS_SOURCEPATH }}\\{{ VAR_Installer_Name }}"
+              state: absent
+            when: sourcepath_state.stat.exists == true
+        when: VAR_IIS_SOURCEPATH is not none
+    when: VAR_IIS_INSTALLTYPE | upper != "NONE"
+
+  - name: only stop IIS
+    win_command: iisreset /stop
+    when: (VAR_IIS_State | upper == "STOP") and (VAR_IIS_INSTALLTYPE | upper == "NONE")
+
+  - name: only start IIS
+    win_command: iisreset /start
+    when: (VAR_IIS_State | upper != "STOP") and (VAR_IIS_INSTALLTYPE | upper == "NONE")
